@@ -7,10 +7,231 @@ editor_options:
 ---
 
 ```{r}
+library(tidyverse)
+```
+
+```{r}
 quarter_splits <- c(1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.4)
 
 for (i in seq_along(quarter_splits)){
   half_time <- quarter_splits[i] + quarter_splits[i + 1]
   print(half_time)
 }
+```
+
+# Intro to functions
+
+Make a function to double the user input
+
+```{r}
+double_this <- function(my_value){
+  print(2 * my_value)
+}
+
+double_this(my_value = 200)
+double_this(200)
+
+double_this(c(1, 2, 10, 100, 175))
+```
+
+Write a function that asks for a users name and age and returns an exclamation like " I am \[name\] and I am \[age\] years old."
+
+```{r}
+age_exclamation <- function(name, age){
+  print(paste("I am", name, "and I am", age, "years old!"))
+}
+
+age_exclamation(name = "Guillermo", age = 100)
+```
+
+```{r}
+convert_animal_age <- function(animal, human_age){
+  if (animal == "dog"){
+    print(human_age * 7)
+  }else if (animal == "goat"){
+    print(human_age * 4.7)
+  }else{
+    print('Only accepts "animal" or "dog"')
+  }
+}
+
+convert_animal_age(animal = "zebra", human_age = 100)
+```
+
+# Data Frames and functions
+
+```{r}
+# Create data frame
+dog_choice <- tribble(
+  ~dog_name, ~food,
+  "Khora", "everything",
+  "Teddy", "salmon",
+  "Waffle", "pancakes",
+  "Banjo", "chicken"
+ )
+ 
+dog_menu <- function(name){
+  #create subset of data frame from user input
+  my_subset <- filter(dog_choice, dog_name == name)
+  print(paste("My name is", my_subset$dog_name, "and my favorite food is", my_subset$food)) # pulls different pieces = my_subset$food 
+}
+ 
+dog_menu(name = "Teddy")
+
+```
+
+# Function For Loops
+
+```{r}
+
+means_over_columns <- function(df) {
+  for (i in seq_along(df)) {
+    col_mean <- mean(df[[i]], na.rm = TRUE) # calculate mean
+    column_name <- colnames(df[i]) # pull out column name
+    print(paste("The mean value of", column_name, "is", col_mean))
+  }
+}
+
+means_over_columns(df = mtcars)
+```
+
+# Example Nested For Loop
+
+```{r}
+clothing <- c("shirt", "pants", "shoes")
+color <- c("purple", "red", "blue", "white")
+
+our_clothes <- matrix(nrow = length(color), ncol = length(clothing))
+
+for (i in seq_along(clothing)){
+  for (j in seq_along(color)){
+    clothing_details <- paste(color[j], clothing[i])
+    our_clothes[i,j] <- clothing_details
+  }
+}
+
+our_clothes
+
+
+
+
+```
+
+# Logistic Growth
+
+Modeling a population over time and varying growth rate
+
+```{r}
+# Cmd + option + X
+# Ctrl + Alt + X
+
+
+logistic_growth <- function(K, N0, r, time) {
+  K / (1 + ((K-N0) / N0) * exp(-r * time))
+}
+
+
+# Test 
+logistic_growth(K = 5000, N0 = 100, r = 0.07, time = 42)
+```
+
+input a time vector
+
+```{r}
+time_vec <- seq(from = 0, to = 35, 0.1)
+
+pop_35 <- logistic_growth(N0 = 100, K = 8000, r = 0.5, time = time_vec)
+
+pop_35
+#Create Data Frame of previous two vectors
+pop_35_df <- data.frame(time_vec, pop_35)
+
+ggplot(data = pop_35_df, aes(x = time_vec, y = pop_35)) +
+         geom_line()
+```
+
+```{r}
+pop_35_vec <- vector(mode = 'numeric', length = length(time_vec))
+
+# iterating over time vector
+for (i in seq_along(time_vec)){
+  population <- logistic_growth(N0 = 100, K = 6000, r = 0.27, time = time_vec[i])
+  pop_35_vec[i] <- population
+}
+
+pop_35_vec
+```
+
+Now extend this to iterate over multiple growth rates
+
+```{r}
+# creat growth rate sequence
+
+r_seq <- seq(0.20,0.4,0.01)
+r_seq
+
+empty_matrix <- matrix(nrow = length(time_vec), ncol = length(r_seq))
+
+for (i in seq_along(r_seq)) {
+  for (j in seq_along(time_vec)) {
+    pop <-
+      logistic_growth(
+        N0 = 2,
+        K = 1,
+        r = r_seq[i],
+        time = time_vec[j]
+      )
+    empty_matrix[j, i] <- pop
+  }
+}
+
+empty_matrix
+
+## Now some Data Wrangling
+
+logistic_df <- data.frame(empty_matrix,time= time_vec)
+
+logistic_df
+
+colnames(logistic_df) <- c(paste0("gr_", r_seq), "time")
+
+logistic_df_long <- logistic_df |>
+  pivot_longer(cols = -time, values_to = "population", names_to = "growth_rate")
+
+ggplot(data = logistic_df_long, aes(x = time, y= population)) + geom_line(aes(color = growth_rate))
+```
+
+\# Warning
+
+A function with a warning
+
+Use `warning` to add a warning
+
+Use `stop`
+
+$$
+P =o.3\rho A V^3
+$$\\rho: air density (kg/m\^3)
+
+A: Area covered by turbine(square meters)
+
+V: Wind Velocity (m/s)
+
+\$\$
+
+```{r}
+calc_windpower <- function(rho, radius, windspeed) {
+  0.3*rho* pi *(radius^2*(windspeed^3))
+}
+
+if (windspeed > 30){
+  warning("Whoa, that's really fast. Are you sure")
+}
+
+if (rho> 1.225){
+  warning("That air density is suspicious")
+}
+
+
+calc_windpower(1.225, 50, 35)
 ```
